@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { CATEGORIES, REQUEST_STATUSES, STATUSES } from "./lib/constants.js";
 import { getPhotoUrl, isSupabaseConfigured, supabase } from "./lib/supabase.js";
 
+const PHOTO_BUCKET = "lost-item-photos";
+
 function createInitialLostItem() {
   const now = new Date();
   return {
@@ -286,9 +288,41 @@ function DriverDashboard({ session, notify }) {
 
   const updateField = (name, value) => setForm((current) => ({ ...current, [name]: value }));
 
-  const onPhotoChange = (file) => {
-    setPhoto(file || null);
-    setPhotoPreview(file ? URL.createObjectURL(file) : "");
+  const onPhotoChange = (event) => {
+    const file = event.target.files?.[0] || null;
+
+    if (!file) {
+      setPhoto(null);
+      setPhotoPreview("");
+      return;
+    }
+
+    setPhoto(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
+  const uploadPhoto = async (file) => {
+    if (!file) return null;
+
+    const safeName = (file.name || "photo-mobile.jpg")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9._-]/g, "-")
+      .replace(/-+/g, "-");
+    const photoPath = `${session.user.id}/${Date.now()}-${safeName}`;
+    const { error } = await supabase.storage
+      .from(PHOTO_BUCKET)
+      .upload(photoPath, file, {
+        cacheControl: "3600",
+        contentType: file.type || "image/jpeg",
+        upsert: false,
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    return photoPath;
   };
 
   const validate = () => {
@@ -314,18 +348,15 @@ function DriverDashboard({ session, notify }) {
     setLoading(true);
     let photoPath = null;
 
-    if (photo) {
-      const extension = photo.name.split(".").pop() || "jpg";
-      photoPath = `${session.user.id}/${crypto.randomUUID()}.${extension}`;
-      const { error: uploadError } = await supabase.storage
-        .from("lost-item-photos")
-        .upload(photoPath, photo, { cacheControl: "3600", upsert: false });
-
-      if (uploadError) {
-        setLoading(false);
-        notify("La photo n’a pas pu être téléversée.", "error");
-        return;
-      }
+    try {
+      photoPath = await uploadPhoto(photo);
+    } catch (uploadError) {
+      setLoading(false);
+      notify(
+        `La photo n’a pas pu être téléversée. L’objet n’a pas été enregistré. ${uploadError.message || ""}`.trim(),
+        "error"
+      );
+      return;
     }
 
     const { error } = await supabase.from("lost_items").insert({
@@ -368,7 +399,7 @@ function DriverDashboard({ session, notify }) {
             type="file"
             accept="image/*"
             capture="environment"
-            onChange={(event) => onPhotoChange(event.target.files?.[0])}
+            onChange={onPhotoChange}
           />
         </label>
 
