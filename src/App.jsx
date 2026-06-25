@@ -362,6 +362,7 @@ function DriverDashboard({ session, notify }) {
   null;
 
 photoPath = await uploadPhoto(fileToUpload);
+alert(photoPath ? `PHOTO_PATH OK : ${photoPath}` : "PHOTO_PATH NULL");
     } catch (uploadError) {
       setLoading(false);
       notify(
