@@ -349,7 +349,12 @@ function DriverDashboard({ session, notify }) {
     let photoPath = null;
 
     try {
-      photoPath = await uploadPhoto(photo);
+      const fileToUpload =
+  photo ||
+  event.currentTarget.querySelector('input[type="file"]')?.files?.[0] ||
+  null;
+
+photoPath = await uploadPhoto(fileToUpload);
     } catch (uploadError) {
       setLoading(false);
       notify(
