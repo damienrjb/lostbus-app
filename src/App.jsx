@@ -291,6 +291,7 @@ function DriverDashboard({ session, notify }) {
 
   const onPhotoChange = (event) => {
     const file = event.target.files?.[0] || null;
+    alert(file ? "PHOTO DÉTECTÉE" : "AUCUNE PHOTO DÉTECTÉE");
     setPhotoDebug(
   file
     ? `Fichier détecté : ${file.name} / ${file.type} / ${Math.round(file.size / 1024)} Ko`
