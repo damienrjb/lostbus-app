@@ -283,6 +283,7 @@ function DriverDashboard({ session, notify }) {
   const [form, setForm] = useState(createInitialLostItem);
   const [photo, setPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState("");
+  const [photoDebug, setPhotoDebug] = useState("");
   const [loading, setLoading] = useState(false);
   const [confirmation, setConfirmation] = useState(false);
 
@@ -290,6 +291,11 @@ function DriverDashboard({ session, notify }) {
 
   const onPhotoChange = (event) => {
     const file = event.target.files?.[0] || null;
+    setPhotoDebug(
+  file
+    ? `Fichier détecté : ${file.name} / ${file.type} / ${Math.round(file.size / 1024)} Ko`
+    : "Aucun fichier détecté"
+);
 
     if (!file) {
       setPhoto(null);
@@ -406,6 +412,12 @@ photoPath = await uploadPhoto(fileToUpload);
             capture="environment"
             onChange={onPhotoChange}
           />
+          <p style={{ color: "yellow", fontSize: "12px" }}>
+  {photoDebug}
+</p>
+          <p style={{ color: "yellow", fontSize: "12px" }}>
+  {photoDebug}
+</p>
         </label>
 
         <label>
